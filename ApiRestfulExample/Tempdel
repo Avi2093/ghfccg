@@ -17,3 +17,111 @@
     "DefaultConnection": "Server=localhost\\MSSQLSERVER02;Database=JIRA_Ticketing_Tool;Trusted_Connection=True;Encrypt=false"
   }
 }
+
+
+
+
+---------------------------------------
+
+@page "/Login"
+@{
+    Layout = null;
+}
+
+<a href="/signin-oidc" class="btn btn-primary">Login with Azure AD</a>
+
+
+
+
+
+@using Microsoft.AspNetCore.Authentication.OpenIdConnect
+@using Microsoft.Extensions.Configuration
+@inject IConfiguration Configuration
+
+<form method="post">
+    <button type="submit">Login with Azure AD</button>
+</form>
+
+@code {
+    private string clientId;
+    private string authority;
+    private string redirectUri;
+
+    protected override void OnInitialized()
+    {
+        clientId = Configuration["AzureAd:ClientId"];
+        authority = $"{Configuration["AzureAd:Instance"]}{Configuration["AzureAd:TenantId"]}";
+        redirectUri = Url.Content("~/signin-oidc");
+    }
+
+    async Task Login()
+    {
+        var properties = new AuthenticationProperties { RedirectUri = redirectUri };
+        await HttpContext.ChallengeAsync(OpenIdConnectDefaults.AuthenticationScheme, properties);
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+public void ConfigureServices(IServiceCollection services)
+{
+    services.AddAuthentication(AzureADDefaults.AuthenticationScheme)
+        .AddAzureAD(options => Configuration.Bind("AzureAd", options));
+
+    services.AddControllersWithViews();
+    
+    // Add a default authentication scheme and specify the default challenge scheme
+    services.AddAuthorization(options =>
+    {
+        options.DefaultPolicy = new AuthorizationPolicyBuilder()
+            .RequireAuthenticatedUser()
+            .Build();
+    });
+    services.AddAuthentication(options =>
+    {
+        options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = AzureADDefaults.AuthenticationScheme;
+    })
+    .AddCookie()
+    .AddAzureAD(options => Configuration.Bind("AzureAd", options));
+}
+
+public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+{
+    // Use the authentication middleware before the authorization middleware
+    app.UseAuthentication();
+    app.UseAuthorization();
+
+    // Rest of the code remains the same
+    if (env.IsDevelopment())
+    {
+        app.UseDeveloperExceptionPage();
+    }
+    else
+    {
+        app.UseExceptionHandler("/Home/Error");
+        app.UseHsts();
+    }
+
+    app.UseHttpsRedirection();
+    app.UseStaticFiles();
+
+    app.UseRouting();
+
+    app.UseEndpoints(endpoints =>
+    {
+        endpoints.MapControllerRoute(
+            name: "default",
+            pattern: "{controller=JiraTicketingTool}/{action=Index}/{id?}");
+    });
+}
