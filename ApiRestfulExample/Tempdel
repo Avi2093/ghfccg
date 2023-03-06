@@ -1,0 +1,19 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AzureAd": {
+    "Instance": "https://login.microsoftonline.com/",
+    "Domain": "<your-azure-ad-domain>",
+    "TenantId": "<your-azure-ad-tenant-id>",
+    "ClientId": "<your-azure-ad-client-id>",
+    "CallbackPath": "/signin-oidc"
+  },
+  "AllowedHosts": "*",
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=localhost\\MSSQLSERVER02;Database=JIRA_Ticketing_Tool;Trusted_Connection=True;Encrypt=false"
+  }
+}
